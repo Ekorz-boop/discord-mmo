@@ -46,4 +46,47 @@ async def enter_dungeon(ctx, location_id: int, difficulty: int = 1, num_rooms: i
     else:
         await ctx.send('Error: Failed to enter the dungeon.')
 
+
+@bot.command(name='show_abilities', help='Show a player\'s abilities.')
+async def show_abilities(ctx):
+    response = requests.get(f'https://your-game-server-url/api/player/abilities?player_id={ctx.author.id}')
+    if response.status_code == 200:
+        abilities = response.json()['abilities']
+        abilities_text = '\n'.join([f"{ability['name']} - {ability['description']} (Effect: {ability['effect']})" for ability in abilities])
+        await ctx.send(f"Your abilities:\n{abilities_text}")
+    else:
+        await ctx.send('Error: Failed to get abilities.')
+
+
+@bot.command(name='show_classes', help='Show available character classes.')
+async def show_classes(ctx):
+    response = requests.get('https://your-game-server-url/api/character_classes')
+    if response.status_code == 200:
+        character_classes = response.json()['character_classes']
+        classes_text = '\n'.join([f"{cclass['name']} - {cclass['description']}" for cclass in character_classes])
+        await ctx.send(f"Available character classes:\n{classes_text}")
+    else:
+        await ctx.send('Error: Failed to get character classes.')
+
+@bot.command(name='set_class', help='Set your character class.')
+async def set_class(ctx, character_class_id: int):
+    data = {'player_id': ctx.author.id, 'character_class_id': character_class_id}
+    response = requests.post('https://your-game-server-url/api/player/set_class', data=data)
+    if response.status_code == 200:
+        class_info = response.json()
+        await ctx.send(class_info['message'])
+    else:
+        await ctx.send('Error: Failed to set character class.')
+
+@bot.command(name='show_class_abilities', help='Show abilities for a specific character class.')
+async def show_class_abilities(ctx, class_id: int):
+    response = requests.get(f'https://your-game-server-url/api/abilities?class_id={class_id}')
+    if response.status_code == 200:
+        abilities = response.json()['abilities']
+        abilities_text = '\n'.join([f"{ability['name']} - {ability['description']} (Effect: {ability['effect']})" for ability in abilities])
+        await ctx.send(f"Class abilities:\n{abilities_text}")
+    else:
+        await ctx.send('Error: Failed to get abilities.')
+
+
 bot.run('your-bot-token')

@@ -20,8 +20,12 @@ class Player(db.Model):
     arrival_time = db.Column(db.DateTime, nullable=True)
     dungeon_id = db.Column(db.Integer, db.ForeignKey('dungeon.id'), nullable=True)
     current_room = db.Column(db.Integer, nullable=True)
+    character_class_id = db.Column(db.Integer, db.ForeignKey('character_class.id'), nullable=True)
+    
 
     inventory = db.relationship('Item', backref='player', lazy=True)
+    abilities = db.relationship('PlayerAbility', backref='player', lazy=True)
+    character_class = db.relationship('CharacterClass', lazy=True)
 
     def __repr__(self):
         return f'<Player {self.username}>'
@@ -79,6 +83,41 @@ class DungeonRoom(db.Model):
 
     def __repr__(self):
         return f'<DungeonRoom {self.id}>'
+    
+class Ability(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    effect = db.Column(db.String(200), nullable=False)
+    class_id = db.Column(db.Integer, db.ForeignKey('character_class.id'), nullable=True)
+
+    character_class = db.relationship('CharacterClass', lazy=True)
+
+    def __repr__(self):
+        return f'<Ability {self.name}>'
+
+
+class PlayerAbility(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
+    ability_id = db.Column(db.Integer, db.ForeignKey('ability.id'), nullable=False)
+    cooldown_end = db.Column(db.DateTime, nullable=True)
+
+    ability = db.relationship('Ability', lazy=True)
+
+    def __repr__(self):
+        return f'<PlayerAbility {self.ability.name}>'
+    
+
+class CharacterClass(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    starting_hp = db.Column(db.Integer, nullable=False)
+    hp_per_level = db.Column(db.Integer, nullable=False)
+
+    def __repr__(self):
+        return f'<CharacterClass {self.name}>'
 
 
 def create_tables():
@@ -212,3 +251,44 @@ def enter_dungeon():
     db.session.commit()
 
     return jsonify({"message": f"You have entered a dungeon with {num_rooms} rooms.", "dungeon_id": dungeon.id})
+
+@app.route('/api/player/abilities', methods=['GET'])
+def get_abilities():
+    player_id = request.args.get('player_id')
+    player = Player.query.get(player_id)
+    if player:
+        abilities = [{"name": pa.ability.name, "description": pa.ability.description, "effect": pa.ability.effect, "cooldown_end": pa.cooldown_end} for pa in player.abilities]
+        return jsonify({"abilities": abilities})
+    else:
+        return jsonify({"error": "Player not found."}), 404
+    
+@app.route('/api/character_classes', methods=['GET'])
+def get_character_classes():
+    character_classes = CharacterClass.query.all()
+    return jsonify({"character_classes": [{"id": cclass.id, "name": cclass.name, "description": cclass.description} for cclass in character_classes]})
+
+@app.route('/api/player/set_class', methods=['POST'])
+def set_character_class():
+    player_id = request.form.get('player_id')
+    character_class_id = request.form.get('character_class_id')
+
+    player = Player.query.get(player_id)
+    if not player:
+        return jsonify({"error": "Player not found."}), 404
+
+    character_class = CharacterClass.query.get(character_class_id)
+    if not character_class:
+        return jsonify({"error": "Character class not found."}), 404
+
+    player.character_class_id = character_class_id
+    db.session.commit()
+
+    return jsonify({"message": f"Character class set to {character_class.name}."})
+
+
+@app.route('/api/abilities', methods=['GET'])
+def get_abilities_by_class():
+    class_id = request.args.get('class_id')
+    abilities = Ability.query.filter_by(class_id=class_id).all()
+    return jsonify({"abilities": [{"id": ability.id, "name": ability.name, "description": ability.description, "effect": ability.effect} for ability in abilities]})
+
