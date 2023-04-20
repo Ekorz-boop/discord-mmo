@@ -27,13 +27,13 @@ def main():
 
     # Initialize the database
     print("Initializing the database...")
+    run_command("set FLASK_APP=app.py")
     run_command("flask db init")
     run_command("flask db migrate")
     run_command("flask db upgrade")
 
     # Start the server
     print("Starting the server...")
-    run_command("set FLASK_APP=discord_mmo_server.py")
     run_command("flask run")
 
 
