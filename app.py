@@ -118,6 +118,44 @@ class CharacterClass(db.Model):
 
     def __repr__(self):
         return f'<CharacterClass {self.name}>'
+    
+
+class Combat:
+    def __init__(self, player, enemy):
+        self.player = player
+        self.enemy = enemy
+
+    def player_attack(self):
+        attack_damage = random.randint(self.player.attack_min, self.player.attack_max)
+        self.enemy.hp -= attack_damage
+        return attack_damage
+
+    def enemy_attack(self):
+        attack_damage = random.randint(self.enemy.attack_min, self.enemy.attack_max)
+        self.player.hp -= attack_damage
+        return attack_damage
+
+    def is_player_alive(self):
+        return self.player.hp > 0
+
+    def is_enemy_alive(self):
+        return self.enemy.hp > 0
+
+    def fight(self):
+        while self.is_player_alive() and self.is_enemy_alive():
+            player_damage = self.player_attack()
+            print(f"{self.player.name} dealt {player_damage} damage to {self.enemy.name}!")
+            
+            if not self.is_enemy_alive():
+                print(f"{self.enemy.name} has been defeated!")
+                return True
+
+            enemy_damage = self.enemy_attack()
+            print(f"{self.enemy.name} dealt {enemy_damage} damage to {self.player.name}!")
+
+            if not self.is_player_alive():
+                print(f"{self.player.name} has been defeated!")
+                return False
 
 
 def create_tables():
