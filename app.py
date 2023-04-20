@@ -80,7 +80,11 @@ class DungeonRoom(db.Model):
     def __repr__(self):
         return f'<DungeonRoom {self.id}>'
 
-db.create_all()
+
+def create_tables():
+    with app.app_context():
+        db.create_all()
+
 
 @app.route('/api/player', methods=['POST'])
 def create_player():
