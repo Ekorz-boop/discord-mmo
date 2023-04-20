@@ -89,4 +89,14 @@ async def show_class_abilities(ctx, class_id: int):
         await ctx.send('Error: Failed to get abilities.')
 
 
+@bot.command(name='use_ability', help='Use an ability in combat.')
+async def use_ability(ctx, combat_id: int, ability_id: int):
+    data = {'combat_id': combat_id, 'player_id': ctx.author.id, 'ability_id': ability_id}
+    response = requests.post('https://your-game-server-url/api/combat/use_ability', data=data)
+    if response.status_code == 200:
+        ability_info = response.json()
+        await ctx.send(ability_info['message'])
+    else:
+        await ctx.send('Error: Failed to use ability.')
+
 bot.run('your-bot-token')

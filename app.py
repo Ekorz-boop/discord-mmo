@@ -292,3 +292,46 @@ def get_abilities_by_class():
     abilities = Ability.query.filter_by(class_id=class_id).all()
     return jsonify({"abilities": [{"id": ability.id, "name": ability.name, "description": ability.description, "effect": ability.effect} for ability in abilities]})
 
+
+@app.route('/api/combat/use_ability', methods=['POST'])
+def use_ability():
+    combat_id = request.form.get('combat_id')
+    player_id = request.form.get('player_id')
+    ability_id = request.form.get('ability_id')
+
+    combat = Combat.query.get(combat_id)
+    if not combat:
+        return jsonify({"error": "Combat not found."}), 404
+
+    player = Player.query.get(player_id)
+    if not player:
+        return jsonify({"error": "Player not found."}), 404
+
+    ability = Ability.query.get(ability_id)
+    if not ability:
+        return jsonify({"error": "Ability not found."}), 404
+
+    # Implement your ability effects here, e.g., deal damage, heal, etc.
+    # ...
+
+    combat.ability_id = ability_id
+    db.session.commit()
+
+    return jsonify({"message": f"{player.name} used {ability.name}."})
+def apply_damage_ability(target, damage):
+    target.hp -= damage
+    if target.hp < 0:
+        target.hp = 0
+    db.session.commit()
+
+
+def apply_healing_ability(target, healing):
+    target.hp += healing
+    if target.hp > target.max_hp:
+        target.hp = target.max_hp
+    db.session.commit()
+
+
+def apply_aoe_damage_ability(targets, damage):
+    for target in targets:
+        apply_damage_ability(target, damage)
